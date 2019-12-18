@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head >
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        body { margin: 0; }
+        canvas { width: 100%; height: 100% }
+    </style>
+
+</head>
+<body>
+    <script src="js/three.js"></script>
+    <div id="label"></div>
+    <div id="container"></div>
+    <script src="js/states.min.js"></script>
+    <script src="js/OrbitControls.js"></script>
+
+    <script>
+
+    var stats = initStats();
+    var scene, camera, renderer, controls, light;
+    // 初始化场景
+    function initScene() {
+        scene = new THREE.Scene();
+        scene.fog = new THREE.Fog( scene.background, 3000, 5000 );
+    }
+
+    // 初始化相机
+    function initCamera() {
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, 800, 1500);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+    }
+
+    // 初始化灯光
+    function initLight() {
+        var directionalLight = new THREE.DirectionalLight( 0xffffff, 0.3 );//模拟远处类似太阳的光源
+        directionalLight.color.setHSL( 0.1, 1, 0.95 );
+        directionalLight.position.set( 0, 200, 0).normalize();
+        scene.add( directionalLight );
+
+        var ambient = new THREE.AmbientLight( 0xffffff, 1 ); //AmbientLight,影响整个场景的光源
+        ambient.position.set(0,0,0);
+        scene.add( ambient );
+    }
+    //创建墙
+    function createCubeWall(width, height, depth, angle, material, x, y, z, name){
+        var cubeGeometry = new THREE.BoxGeometry(width, height, depth );
+        var cube = new THREE.Mesh( cubeGeometry, material );
+        cube.position.x = x;
+        cube.position.y = y;
+        cube.position.z = z;
+        cube.rotation.y += angle*Math.PI;  //-逆时针旋转,+顺时针
+        cube.name = name;
+        scene.add(cube);
+    }
+    // 初始化性能插件
+    function initStats() {
+        var stats = new Stats();
+
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+
+        document.body.appendChild(stats.domElement);
+        return stats;
+    }
+
+    // 初始化渲染器
+    function initRenderer() {
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x4682B4,1.0);
+        document.body.appendChild(renderer.domElement);
+    }
+
+    //创建地板
+    function createFloor(){
+        var loader = new THREE.TextureLoader();
+        loader.load("image/floor.jpg",function(texture){
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set( 10, 10 );
+            var floorGeometry = new THREE.BoxGeometry(2600, 1400, 1);
+            var floorMaterial = new THREE.MeshBasicMaterial( { map: texture, side: THREE.DoubleSide } );
+            var floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.position.y = -0.5;
+            floor.rotation.x = Math.PI / 2;
+            floor.name = "地面";
+            scene.add(floor);
+        });
+    }
+
+    // 初始化模型
+    function initContent() {
+        createFloor();
+    }
+
+    // 初始化轨迹球控件
+    function initControls() {
+        controls = new THREE.OrbitControls( camera, renderer.domElement );
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.5;
+        // 视角最小距离
+        controls.minDistance = 100;
+        // 视角最远距离
+        controls.maxDistance = 5000;
+        // 最大角度
+        controls.maxPolarAngle = Math.PI/2.2;
+    }
+
+    // 更新控件
+    function update() {
+        stats.update();
+        controls.update();
+    }
+
+    // 初始化
+    function init() {
+        initScene();
+        initCamera();
+        initRenderer();
+        initContent();
+        initLight();
+        initControls();
+        //创建墙
+        createCubeWall(10, 200, 1400, 0, new THREE.MeshPhongMaterial({color: 0xafc0ca}), -1295, 100, 0, "主卧主卫");
+        createCubeWall(10, 200, 895, 0, new THREE.MeshPhongMaterial({color: 0xafc0ca}), -1295, 100, 0, "主卧主卫");
+        createCubeWall(10, 200, 1400, 1, new THREE.MeshPhongMaterial({color: 0xafc0ca}), 1295, 100, 0, "副卧副卫");
+        createCubeWall(10, 200, 1200, 1, new THREE.MeshPhongMaterial({color: 0xafc0ca}), 400, 100, 350, "客厅副卧");
+        createCubeWall(10, 200, 1200, 1, new THREE.MeshPhongMaterial({color: 0xafc0ca}), -600, 100, 350, "卧室沙发");
+        createCubeWall(10, 200, 2600, 1.5, new THREE.MeshPhongMaterial({color: 0xafc0ca}), 0, 100, -700, "主卧客厅玻璃墙");
+        createCubeWall(10, 200, 2600, 1.5, new THREE.MeshPhongMaterial({color: 0xafc0ca}), 0, 100, -700, "主卧客厅玻璃墙");
+        createCubeWall(10, 200, 2600, 1.5, new THREE.MeshPhongMaterial({color: 0xafc0ca}), 0, 100, 700, "客厅电视墙");
+        document.addEventListener('resize', onWindowResize, false);
+    }
+
+        // 窗口变动触发的方法
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+            update();
+        }
+
+        init();
+        animate();
+
+    </script>
+</body>
+</html>
